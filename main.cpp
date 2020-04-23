@@ -107,26 +107,75 @@ public:
 
 class Component {
 public:
+    explicit Component(const std::string &name, const std::string &path, const std::vector<std::string> &sources) {
+        this->name = name;
+        
+        this->sources = sources;
+    }
+
     std::vector<std::string> getSources() const {
-        return {
-            "main.cpp"
-        };
+        return sources;
+
     }
 
     std::string getName() const {
-        return "borc";
+        return name;
     }
+
+private:
+    std::string name;
+    std::string path;
+    std::vector<std::string> sources;
 };
 
 
+class Component;
 class Package {
 public:
-    std::vector<Component> getComponents() const {
-        return {
-            Component{}
-        };
+    explicit Package(const std::string &name, const std::string &path) {
+        this->name = name;
+        this->path = path;
     }
+
+    std::vector<Component*> getComponents() const {
+        return components;
+    }
+
+    Component* addComponent(const std::string &name, const std::string &path, const std::vector<std::string> &sources) {
+        Component *component = new Component(name, path, sources);
+
+        components.push_back(component);
+
+        return component;
+    }
+
+private:
+    std::string name;
+    std::string path;
+    std::vector<Component*> components;
 };
+
+
+Package* createBorcPackage() {
+    auto package = new Package("ng-borc", "./");
+
+    package->addComponent("borc", "./", {
+        "main.cpp"
+    });
+
+    return package;
+}
+
+
+Package* createHelloWorldPackage() {
+    auto package = new Package("01-hello-world", "./test-data/cpp-core/01-hello-world/");
+
+    package->addComponent("01-hello-world", "./", {
+        "main.cpp"
+    });
+
+    return package;
+}
 
 
 class BuildSystem {
@@ -135,28 +184,27 @@ public:
         package = package_;
     }
 
-
     void build(const Compiler &compiler, const Linker linker) {
-        for (Component component : package->getComponents()) {
+        for (Component *component : package->getComponents()) {
             this->build(compiler, linker, component);
         }
     }
 
 private:
-    void build(const Compiler &compiler, const Linker linker, const Component &component) {
+    void build(const Compiler &compiler, const Linker linker, const Component *component) {
         std::cout << "Compiling ..." << std::endl;
 
         std::vector<std::string> objects;
 
-        for (const std::string &source : component.getSources()) {
+        for (const std::string &source : component->getSources()) {
             std::cout << source << " ... " << std::endl;
             const CompileOutput output = compiler.compile(source);
             output.command.execute();
             objects.push_back(output.objectFile);
         }
 
-        std::cout << "Linking executable '" << component.getName() << "' ... " << std::endl;
-        const LinkerOutput output = linker.link(component.getName(), objects);
+        std::cout << "Linking executable '" << component->getName() << "' ... " << std::endl;
+        const LinkerOutput output = linker.link(component->getName(), objects);
         output.command.execute();
         
         std::cout << "Done" << std::endl;
@@ -170,9 +218,9 @@ private:
 int main(int argc, char **argv) {
     Compiler compiler;
     Linker linker;
-    Package package;
+    Package *package = createHelloWorldPackage();
 
-    BuildSystem buildSystem{&package};
+    BuildSystem buildSystem {package};
 
     buildSystem.build(compiler, linker);
 
