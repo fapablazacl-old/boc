@@ -57,7 +57,7 @@ public:
         return CompileOutput {
             source, 
             object, 
-            Command{"clang"}
+            createCompilerCommand()
                 .addArg("-std=c++17")
                 .addArg("-c")
                 .addArg(source)
@@ -68,6 +68,12 @@ public:
     }
 
 private:
+    Command createCompilerCommand() const {
+        // return Command{"clang"};
+        return Command{"gcc"};
+    }
+
+
     std::string objectName(const std::string &source) const {
         return source + ".obj";
     }
@@ -86,20 +92,27 @@ public:
     LinkerOutput link(const std::string &name, const std::vector<std::string> &objects) const {
         assert(objects.size());
 
-        Command command("ld");
+        Command command("gcc");
 
         for (const std::string &object : objects) {
             command.addArg(object);
+        }
+
+        bool is_macOS = false;
+
+        if (is_macOS) {
+            command.addArg("-macosx_version_min " "10.14");
+            command.addArg("-lc++");
+        } else {
+            command.addArg("-lstdc++");
         }
 
         return LinkerOutput {
             objects,
             name,
             command
-                .addArg("-lc++")
                 .addArg("-lm")
                 .addArg("-o " + name)
-                .addArg("-macosx_version_min " "10.14")
         };
     }
 };
