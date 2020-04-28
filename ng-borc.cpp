@@ -118,24 +118,36 @@ public:
 };
 
 
+class Package;
 class Component {
 public:
-    explicit Component(const std::string &name, const std::string &path, const std::vector<std::string> &sources) {
+    explicit Component(const Package *parentPackage, const std::string &name, const std::string &path, const std::vector<std::string> &sources) {
+        this->parentPackage = parentPackage;
         this->name = name;
-        
         this->sources = sources;
     }
 
+
     std::vector<std::string> getSources() const {
         return sources;
-
     }
+
 
     std::string getName() const {
         return name;
     }
 
+
+    const Package* getPackage() const {
+        return parentPackage;
+    }
+
+
+    std::string getPath() const {
+        return path;
+    }
 private:
+    const Package *parentPackage = nullptr;
     std::string name;
     std::string path;
     std::vector<std::string> sources;
@@ -155,11 +167,15 @@ public:
     }
 
     Component* addComponent(const std::string &name, const std::string &path, const std::vector<std::string> &sources) {
-        Component *component = new Component(name, path, sources);
+        Component *component = new Component(this, name, path, sources);
 
         components.push_back(component);
 
         return component;
+    }
+
+    std::string getPath() const {
+        return path;
     }
 
 private:
@@ -210,6 +226,8 @@ private:
         std::vector<std::string> objects;
 
         for (const std::string &source : component->getSources()) {
+            const std::string sourcePath = component->getPackage()->getPath() + component->getPath() + source;
+
             std::cout << source << " ... " << std::endl;
             const CompileOutput output = compiler.compile(source);
             output.command.execute();
