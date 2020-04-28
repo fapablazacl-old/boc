@@ -67,6 +67,10 @@ public:
         };
     }
 
+    bool isCompilable(const std::string &source) const {
+        return true;
+    }
+
 private:
     Command createCompilerCommand() const {
         // return Command{"clang"};
@@ -211,10 +215,10 @@ Package* createWordCounterPackage() {
     auto package = new Package("02-word-counter", "./test-data/cpp-core/02-word-counter/");
 
     package->addComponent("02-word-counter", "./", {
-        "main.cpp"
-        "WordCounter.cpp"
-        "WordCounter.hpp"
-        "WordList.cpp"
+        "main.cpp",
+        "WordCounter.cpp",
+        "WordCounter.hpp",
+        "WordList.cpp",
         "WordList.hpp"
     });
 
@@ -240,9 +244,13 @@ private:
         std::vector<std::string> objects;
 
         for (const std::string &source : component->getSources()) {
-            const std::string sourcePath = component->getPackage()->getPath() + component->getPath() + source;
+            if (! compiler.isCompilable(source)) {
+                continue;
+            }
 
-            std::cout << source << " ... " << std::endl;
+            const std::string sourcePath = component->getPackage()->getPath() + component->getPath() + source;
+            
+            std::cout << "    " << source << std::endl;
             const CompileOutput output = compiler.compile(sourcePath);
             output.command.execute();
             objects.push_back(output.objectFile);

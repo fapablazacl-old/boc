@@ -1,5 +1,5 @@
 
-#include "WorkList.hpp"
+#include "WordList.hpp"
 
 std::vector<std::string> get_word_list() {
     return {
