@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # macOS
-# clang ng-borc.cpp -o ng-borc -lstdc++ -std=c++17 && ./ng-borc 
+# clang ng-borc.cpp -o ng-borc -lstdc++ -std=c++17
 
 # linux
-gcc ng-borc.cpp -o ng-borc -lstdc++ -std=c++17 && ./ng-borc 
+gcc ng-borc.cpp -o ng-borc -lstdc++ -std=c++17

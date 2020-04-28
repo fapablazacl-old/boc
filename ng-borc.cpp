@@ -89,7 +89,7 @@ struct LinkerOutput {
 
 class Linker {
 public:
-    LinkerOutput link(const std::string &name, const std::vector<std::string> &objects) const {
+    LinkerOutput link(const std::string &name, const std::string &outputFilePath, const std::vector<std::string> &objects) const {
         assert(objects.size());
 
         Command command("gcc");
@@ -109,10 +109,10 @@ public:
 
         return LinkerOutput {
             objects,
-            name,
+            outputFilePath,
             command
                 .addArg("-lm")
-                .addArg("-o " + name)
+                .addArg("-o " + outputFilePath)
         };
     }
 };
@@ -229,14 +229,15 @@ private:
             const std::string sourcePath = component->getPackage()->getPath() + component->getPath() + source;
 
             std::cout << source << " ... " << std::endl;
-            const CompileOutput output = compiler.compile(source);
+            const CompileOutput output = compiler.compile(sourcePath);
             output.command.execute();
             objects.push_back(output.objectFile);
         }
 
         std::cout << "Linking executable '" << component->getName() << "' ... " << std::endl;
-        const LinkerOutput output = linker.link(component->getName(), objects);
+        const LinkerOutput output = linker.link(component->getName(), component->getPackage()->getPath() + component->getPath() + component->getName(), objects);
         output.command.execute();
+        std::cout << "Component path: '" << output.executable << "' ... " << std::endl;
         
         std::cout << "Done" << std::endl;
     }
