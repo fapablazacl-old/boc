@@ -207,6 +207,20 @@ Package* createHelloWorldPackage() {
 }
 
 
+Package* createWordCounterPackage() {
+    auto package = new Package("02-word-counter", "./test-data/cpp-core/02-word-counter/");
+
+    package->addComponent("02-word-counter", "./", {
+        "main.cpp"
+        "WordCounter.cpp"
+        "WordCounter.hpp"
+        "WordList.cpp"
+        "WordList.hpp"
+    });
+
+    return package;
+}
+
 class BuildSystem {
 public:
     explicit BuildSystem(Package *package_) {
@@ -250,8 +264,9 @@ private:
 int main(int argc, char **argv) {
     Compiler compiler;
     Linker linker;
-    Package *package = createHelloWorldPackage();
-
+    // Package *package = createHelloWorldPackage();
+    Package *package = createWordCounterPackage();
+    
     BuildSystem buildSystem {package};
 
     buildSystem.build(compiler, linker);
