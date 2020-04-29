@@ -67,8 +67,15 @@ public:
         };
     }
 
+
     bool isCompilable(const std::string &source) const {
-        return true;
+        if (auto pos = source.rfind("."); pos != std::string::npos) {
+            const std::string ext = source.substr(pos, source.size());
+
+            return ext == ".cpp";
+        }
+
+        return false;
     }
 
 private:
@@ -225,11 +232,24 @@ Package* createWordCounterPackage() {
     return package;
 }
 
+
 class BuildSystem {
 public:
-    explicit BuildSystem(Package *package_) {
-        package = package_;
+    class Listener {
+    public:
+        virtual ~Listener() {}
+        
+        virtual void receiveOutput(const CompileOutput &output) = 0;
+
+        virtual void receiveOutput(const LinkerOutput &output) = 0;
+    };
+
+public:
+    explicit BuildSystem(Package *package, Listener *listener = nullptr) {
+        this->package = package;
+        this->listener = listener;
     }
+
 
     void build(const Compiler &compiler, const Linker linker) {
         for (Component *component : package->getComponents()) {
@@ -239,8 +259,6 @@ public:
 
 private:
     void build(const Compiler &compiler, const Linker linker, const Component *component) {
-        std::cout << "Compiling ..." << std::endl;
-
         std::vector<std::string> objects;
 
         for (const std::string &source : component->getSources()) {
@@ -248,24 +266,37 @@ private:
                 continue;
             }
 
-            const std::string sourcePath = component->getPackage()->getPath() + component->getPath() + source;
+            const std::string sourceFile = component->getPackage()->getPath() + component->getPath() + source;
+            const CompileOutput output = compiler.compile(sourceFile);
+
+            if (listener) listener->receiveOutput(output);
             
-            std::cout << "    " << source << std::endl;
-            const CompileOutput output = compiler.compile(sourcePath);
-            output.command.execute();
             objects.push_back(output.objectFile);
         }
 
-        std::cout << "Linking executable '" << component->getName() << "' ... " << std::endl;
         const LinkerOutput output = linker.link(component->getName(), component->getPackage()->getPath() + component->getPath() + component->getName(), objects);
-        output.command.execute();
-        std::cout << "Component path: '" << output.executable << "' ... " << std::endl;
-        
-        std::cout << "Done" << std::endl;
+        if (listener) listener->receiveOutput(output);
     }
 
 private:
     Package *package = nullptr;
+    Listener *listener = nullptr;
+};
+
+
+class BuildCommmandListener : public BuildSystem::Listener {
+public:
+    virtual void receiveOutput(const CompileOutput &output) override {
+        std::cout << "[C++] " << output.sourceFile << " ..." << std::endl;
+        output.command.execute();
+    }
+
+
+    virtual void receiveOutput(const LinkerOutput &output) override {
+        std::cout << "[C++] Linking executable ... " << std::endl;
+        output.command.execute();
+        std::cout << "Component path: '" << output.executable << "' ... " << std::endl;
+    }
 };
 
 
@@ -275,7 +306,8 @@ int main(int argc, char **argv) {
     // Package *package = createHelloWorldPackage();
     Package *package = createWordCounterPackage();
     
-    BuildSystem buildSystem {package};
+    BuildCommmandListener listener;
+    BuildSystem buildSystem {package, &listener};
 
     buildSystem.build(compiler, linker);
 
