@@ -1,0 +1,10 @@
+name: "bok"
+description: "Build Orchestration Command Line Interface"
+type: "application/console"
+languages: 
+  - "c++/17"
+sources:
+  - "src/**"
+dependencies:
+  - "boost>=1.70.0/[filesystem, system, process, program_options]"
+  - "jbeder/yaml-cpp"

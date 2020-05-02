@@ -1,0 +1,9 @@
+name: "bok"
+description: "Just another C++ build system"
+version: "1.0.0"
+license: "MIT"
+author: "Felipe Apablaza"
+email: "ing.apablaza@gmail.com"
+definition_files: 
+  - "component/core"
+  - "component/bok"
