@@ -1,5 +1,5 @@
 
-#include "Compiler.hpp"
+#include <boc/core/Compiler.hpp>
 
 
 CompileOutput Compiler::compile(const std::string &source) const {

@@ -1,7 +1,7 @@
 
-#include "Package.hpp"
+#include <boc/core/Package.hpp>
 
-#include "Component.hpp"
+#include <boc/core/Component.hpp>
 
 Package::Package(const std::string &name, const std::string &path) {
     this->name = name;

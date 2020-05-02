@@ -1,15 +1,13 @@
 
-#include "BuildSystem.hpp"
+#include <boc/core/BuildSystem.hpp>
 
 #include <vector>
 #include <string>
-
-#include "Compiler.hpp"
-#include "Linker.hpp"
-#include "BuildCache.hpp"
-#include "Component.hpp"
-#include "Package.hpp"
-
+#include <boc/core/Compiler.hpp>
+#include <boc/core/Linker.hpp>
+#include <boc/core/BuildCache.hpp>
+#include <boc/core/Component.hpp>
+#include <boc/core/Package.hpp>
 
 BuildSystem::BuildSystem(Package *package, BuildCache *buildCache, Listener *listener) {
     this->package = package;

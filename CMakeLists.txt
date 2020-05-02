@@ -4,4 +4,6 @@ project(boc)
 
 set (CMAKE_CXX_STANDARD 17)
 
-add_subdirectory("src")
+include_directories("component/core/include")
+add_subdirectory("component/core")
+add_subdirectory("component/boc")
