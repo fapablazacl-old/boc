@@ -10,7 +10,8 @@
 #include "Component.hpp"
 #include "Package.hpp"
 
-BuildSystem::BuildSystem(Package *package, BuildCache *buildCache, Listener *listener = nullptr) {
+
+BuildSystem::BuildSystem(Package *package, BuildCache *buildCache, Listener *listener) {
     this->package = package;
     this->buildCache = buildCache;
     this->listener = listener;
