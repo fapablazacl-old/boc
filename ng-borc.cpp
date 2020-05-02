@@ -240,6 +240,13 @@ Package* createWordCounterPackage() {
 
 
 class BuildCache {
+private:
+    enum DATA_LOCATION {
+        DL_CACHE,
+        DL_FILESYSTEM
+    };
+
+
 public:
     explicit BuildCache(const std::string &cacheFile) {
         this->cacheFile = cacheFile;
@@ -258,7 +265,7 @@ public:
 
 
     void sourceBuilt(const std::string &sourceFile) {
-        const time_t modifiedTime = this->getModifiedTime(sourceFile.c_str(), false).value();
+        const time_t modifiedTime = this->getModifiedTime(sourceFile.c_str(), DL_FILESYSTEM).value();
 
         sourceCache.insert({sourceFile, modifiedTime});
 
@@ -269,8 +276,8 @@ public:
     bool sourceNeedsRebuild(const std::string &sourceFile) const {
         std::cout << "Cheking " << sourceFile << std::endl;
 
-        const auto cachedTimestamp = this->getModifiedTime(sourceFile.c_str(), true);
-        const auto currentTimestamp = this->getModifiedTime(sourceFile.c_str(), false);
+        const auto cachedTimestamp = this->getModifiedTime(sourceFile.c_str(), DL_CACHE);
+        const auto currentTimestamp = this->getModifiedTime(sourceFile.c_str(), DL_FILESYSTEM);
 
         if (!cachedTimestamp.has_value() || !currentTimestamp.has_value()) {
             std::cout << "Must build (HARD): " << true << std::endl;
@@ -347,25 +354,30 @@ private:
         fsOutput.flush();
     }
 
+    std::optional<time_t> getModifiedTime(const char *fileName, DATA_LOCATION location) const {
+        switch (location) {
+            case DL_CACHE: {
+                if (auto it = sourceCache.find(fileName); it != sourceCache.end()) {
+                    return it->second;
+                }
 
-    std::optional<time_t> getModifiedTime(const char *fileName, bool cached) const {
-        if (cached) {
-            if (auto it = sourceCache.find(fileName); it != sourceCache.end()) {
-                return it->second;
+                break;
             }
 
-            return {};
-        } else {
-            struct stat result;
+            case DL_FILESYSTEM: {
+                struct stat result;
 
-            if (stat(fileName, &result) == 0) {
-                auto modified_time = result.st_mtim;
+                if (stat(fileName, &result) == 0) {
+                    auto modified_time = result.st_mtim;
 
-                return modified_time.tv_sec;
+                    return modified_time.tv_sec;
+                }
+
+                break;
             }
-
-            return {};
         }
+
+        return {};
     }
 
 private:
