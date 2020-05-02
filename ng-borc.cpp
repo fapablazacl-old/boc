@@ -4,6 +4,12 @@
 #include <iostream>
 #include <cassert>
 #include <cstdlib>
+#include <map>
+#include <fstream>
+#include <algorithm>
+
+#include <sys/types.h>
+#include <sys/stat.h>
 
 class Command {
 public:
@@ -233,6 +239,92 @@ Package* createWordCounterPackage() {
 }
 
 
+class BuildCache {
+public:
+    BuildCache(const std::string &cacheFile) {
+        this->cacheFile = cacheFile;
+
+        std::fstream fs(cacheFile.c_str(), std::ios_base::in);
+
+        if (! fs.is_open()) {
+            return;
+        }
+
+        std::string line;
+
+        while (!fs.eof()) {
+            std::getline(fs, line);
+
+            size_t pos = line.find(':');
+
+            if (pos == std::string::npos) {
+                continue;
+            }
+
+            const std::string key = line.substr(0, pos);
+            const time_t value = static_cast<time_t>(std::atol(line.substr(pos, line.size()).c_str()));
+
+            sourceCache.insert({key, value});
+        }
+    }
+
+
+    ~BuildCache() {
+        std::fstream fs(cacheFile.c_str(), std::ios_base::out);
+
+        if (! fs.is_open()) {
+            return;
+        }
+
+        for (const auto &pair : sourceCache) {
+            fs << "\"" << pair.first << "\":" << pair.second << std::endl;
+        }
+    }
+
+
+    void sourceBuilt(const char *sourceFile) {
+        const std::string key = sourceFile;
+        const time_t value = this->getModifiedTime(sourceFile, false).value();
+
+        sourceCache.insert({key, value});
+    }
+
+
+    bool sourceNeedsRebuild(const char *sourceFile) const {
+        const time_t cachedTimestamp = this->getModifiedTime(sourceFile, true).value();
+        const time_t currentTimestamp = this->getModifiedTime(sourceFile, false).value();
+
+        return cachedTimestamp != currentTimestamp;
+    }
+
+
+private:
+    std::optional<time_t> getModifiedTime(const char *fileName, bool cached) const {
+        if (cached) {
+            if (auto it = sourceCache.find(fileName); it != sourceCache.end()) {
+                return it->second;
+            }
+
+            return {};
+        } else {
+            struct stat result;
+
+            if (stat(fileName, &result) == 0) {
+                auto modified_time = result.st_mtim;
+
+                return modified_time.tv_sec;
+            }
+
+            return {};
+        }
+    }
+
+private:
+    std::string cacheFile;
+    std::map<std::string, time_t> sourceCache;
+};
+
+
 class BuildSystem {
 public:
     class Listener {
@@ -265,8 +357,13 @@ private:
             if (! compiler.isCompilable(source)) {
                 continue;
             }
-
+            
             const std::string sourceFile = component->getPackage()->getPath() + component->getPath() + source;
+
+            if (! this->isSourceChanged(sourceFile)) {
+                continue;
+            }
+
             const CompileOutput output = compiler.compile(sourceFile);
 
             if (listener) listener->receiveOutput(output);
@@ -276,6 +373,11 @@ private:
 
         const LinkerOutput output = linker.link(component->getName(), component->getPackage()->getPath() + component->getPath() + component->getName(), objects);
         if (listener) listener->receiveOutput(output);
+    }
+
+
+    bool isSourceChanged(const std::string &source) {
+        return true;
     }
 
 private:
