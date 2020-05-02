@@ -7,6 +7,7 @@
 #include <map>
 #include <fstream>
 #include <algorithm>
+#include <memory>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -354,6 +355,7 @@ private:
         fsOutput.flush();
     }
 
+
     std::optional<time_t> getModifiedTime(const char *fileName, DATA_LOCATION location) const {
         switch (location) {
             case DL_CACHE: {
@@ -385,6 +387,8 @@ private:
     std::map<std::string, time_t> sourceCache;
     std::fstream fsOutput;
 };
+
+
 
 
 class BuildSystem {
