@@ -241,9 +241,41 @@ Package* createWordCounterPackage() {
 
 class BuildCache {
 public:
-    BuildCache(const std::string &cacheFile) {
+    explicit BuildCache(const std::string &cacheFile) {
         this->cacheFile = cacheFile;
+        this->loadCache();
 
+        std::fstream fsOutput {cacheFile.c_str(), std::ios_base::app};
+
+        if (! fsOutput.is_open()) {
+            return;
+        }
+    }
+
+
+    ~BuildCache() {
+        // this->saveCache();
+    }
+
+
+    void sourceBuilt(const std::string &sourceFile) {
+        const time_t modifiedTime = this->getModifiedTime(sourceFile.c_str(), false).value();
+
+        sourceCache.insert({sourceFile, modifiedTime});
+
+        this->appendEntryToCache(sourceFile, modifiedTime);
+    }
+
+
+    bool sourceNeedsRebuild(const std::string &sourceFile) const {
+        const time_t cachedTimestamp = this->getModifiedTime(sourceFile.c_str(), true).value();
+        const time_t currentTimestamp = this->getModifiedTime(sourceFile.c_str(), false).value();
+
+        return cachedTimestamp != currentTimestamp;
+    }
+
+private:
+    void loadCache() {
         std::fstream fs(cacheFile.c_str(), std::ios_base::in);
 
         if (! fs.is_open()) {
@@ -268,9 +300,9 @@ public:
         }
     }
 
-
-    ~BuildCache() {
-        std::fstream fs(cacheFile.c_str(), std::ios_base::out);
+    /*
+    void saveCache() {
+        std::fstream fs {cacheFile.c_str(), std::ios_base::out};
 
         if (! fs.is_open()) {
             return;
@@ -280,25 +312,14 @@ public:
             fs << "\"" << pair.first << "\":" << pair.second << std::endl;
         }
     }
+    */
 
 
-    void sourceBuilt(const char *sourceFile) {
-        const std::string key = sourceFile;
-        const time_t value = this->getModifiedTime(sourceFile, false).value();
-
-        sourceCache.insert({key, value});
+    void appendEntryToCache(const std::string &sourceFile, const time_t modifiedTime) {
+        fsOutput << "\"" << sourceFile << "\":" << modifiedTime << std::endl;
     }
 
 
-    bool sourceNeedsRebuild(const char *sourceFile) const {
-        const time_t cachedTimestamp = this->getModifiedTime(sourceFile, true).value();
-        const time_t currentTimestamp = this->getModifiedTime(sourceFile, false).value();
-
-        return cachedTimestamp != currentTimestamp;
-    }
-
-
-private:
     std::optional<time_t> getModifiedTime(const char *fileName, bool cached) const {
         if (cached) {
             if (auto it = sourceCache.find(fileName); it != sourceCache.end()) {
@@ -322,6 +343,7 @@ private:
 private:
     std::string cacheFile;
     std::map<std::string, time_t> sourceCache;
+    std::fstream fsOutput;
 };
 
 
@@ -337,8 +359,9 @@ public:
     };
 
 public:
-    explicit BuildSystem(Package *package, Listener *listener = nullptr) {
+    explicit BuildSystem(Package *package, BuildCache *buildCache, Listener *listener = nullptr) {
         this->package = package;
+        this->buildCache = buildCache;
         this->listener = listener;
     }
 
@@ -359,29 +382,29 @@ private:
             }
             
             const std::string sourceFile = component->getPackage()->getPath() + component->getPath() + source;
-
-            if (! this->isSourceChanged(sourceFile)) {
-                continue;
-            }
-
             const CompileOutput output = compiler.compile(sourceFile);
 
-            if (listener) listener->receiveOutput(output);
-            
+            if (buildCache->sourceNeedsRebuild(sourceFile)) {
+                if (listener) {
+                    listener->receiveOutput(output);
+                    buildCache->sourceBuilt(sourceFile);
+                }
+            }
+
             objects.push_back(output.objectFile);
         }
 
         const LinkerOutput output = linker.link(component->getName(), component->getPackage()->getPath() + component->getPath() + component->getName(), objects);
-        if (listener) listener->receiveOutput(output);
+
+        if (listener) {
+            listener->receiveOutput(output);
+        }
     }
 
-
-    bool isSourceChanged(const std::string &source) {
-        return true;
-    }
 
 private:
     Package *package = nullptr;
+    BuildCache *buildCache = nullptr;
     Listener *listener = nullptr;
 };
 
@@ -405,11 +428,13 @@ public:
 int main(int argc, char **argv) {
     Compiler compiler;
     Linker linker;
+    BuildCache buildCache{"buildCache.txt"};
+
     // Package *package = createHelloWorldPackage();
     Package *package = createWordCounterPackage();
     
     BuildCommmandListener listener;
-    BuildSystem buildSystem {package, &listener};
+    BuildSystem buildSystem {package, &buildCache, &listener};
 
     buildSystem.build(compiler, linker);
 
