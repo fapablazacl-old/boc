@@ -1,5 +1,5 @@
 
-#include <boc/core/Component.hpp>
+#include <bok/core/Component.hpp>
 
 Component::Component(const Package *parentPackage, const std::string &name, const std::string &path, const std::vector<std::string> &sources) {
     this->parentPackage = parentPackage;

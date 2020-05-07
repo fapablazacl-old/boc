@@ -1,11 +1,11 @@
 
 #include <iostream>
 
-#include <boc/core/Package.hpp>
-#include <boc/core/BuildCache.hpp>
-#include <boc/core/BuildSystem.hpp>
-#include <boc/core/Compiler.hpp>
-#include <boc/core/Linker.hpp>
+#include <bok/core/Package.hpp>
+#include <bok/core/BuildCache.hpp>
+#include <bok/core/BuildSystem.hpp>
+#include <bok/core/Compiler.hpp>
+#include <bok/core/Linker.hpp>
 
 
 Package* createBorcPackage() {

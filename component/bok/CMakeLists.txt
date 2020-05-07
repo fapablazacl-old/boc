@@ -1,5 +1,5 @@
 
-set (target boc)
+set (target bok)
 
 set (sources 
     "src/ng-borc.cpp"
