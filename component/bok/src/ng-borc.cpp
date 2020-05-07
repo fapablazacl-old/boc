@@ -5,8 +5,10 @@
 #include <bok/core/BuildCache.hpp>
 #include <bok/core/BuildSystem.hpp>
 #include <bok/core/Compiler.hpp>
+#include <bok/core/CompilerGCC.hpp>
 #include <bok/core/Linker.hpp>
 
+using namespace bok;
 
 Package* createBorcPackage() {
     auto package = new Package("ng-borc", "./");
@@ -62,7 +64,7 @@ public:
 
 
 int main(int argc, char **argv) {
-    Compiler compiler;
+    CompilerGCC compiler;
     Linker linker;
     BuildCache buildCache{"buildCache.txt"};
 

@@ -3,27 +3,20 @@
 
 #include "Command.hpp"
 
-struct CompileOutput {
-    std::string sourceFile;
-    std::string objectFile;
-    Command command;
-};
+namespace bok {
+    struct CompileOutput {
+        std::string sourceFile;
+        std::string objectFile;
+        Command command;
+    };
 
 
-class Compiler {
-public:
-    CompileOutput compile(const std::string &source) const;
+    class Compiler {
+    public:
+        virtual ~Compiler();
 
-    bool isCompilable(const std::string &source) const;
+        virtual CompileOutput compile(const std::string &source) const = 0;
 
-private:
-    Command createCompilerCommand() const {
-        // return Command{"clang"};
-        return Command{"gcc"};
-    }
-
-
-    std::string objectName(const std::string &source) const {
-        return source + ".obj";
-    }
-};
+        virtual bool isCompilable(const std::string &source) const = 0;
+    };
+}

@@ -4,35 +4,36 @@
 #include <string>
 #include <vector>
 
-
-class Package;
-class Component {
-public:
-    explicit Component(const Package *parentPackage, const std::string &name, const std::string &path, const std::vector<std::string> &sources);
-
-
-    std::vector<std::string> getSources() const {
-        return sources;
-    }
+namespace bok {
+    class Package;
+    class Component {
+    public:
+        explicit Component(const Package *parentPackage, const std::string &name, const std::string &path, const std::vector<std::string> &sources);
 
 
-    std::string getName() const {
-        return name;
-    }
+        std::vector<std::string> getSources() const {
+            return sources;
+        }
 
 
-    const Package* getPackage() const {
-        return parentPackage;
-    }
+        std::string getName() const {
+            return name;
+        }
 
 
-    std::string getPath() const {
-        return path;
-    }
+        const Package* getPackage() const {
+            return parentPackage;
+        }
 
-private:
-    const Package *parentPackage = nullptr;
-    std::string name;
-    std::string path;
-    std::vector<std::string> sources;
-};
+
+        std::string getPath() const {
+            return path;
+        }
+
+    private:
+        const Package *parentPackage = nullptr;
+        std::string name;
+        std::string path;
+        std::vector<std::string> sources;
+    };
+}
